@@ -37,12 +37,10 @@ jobs:
       run: |
         git clone --depth=1 https://github.com/openwrt/openwrt openwrt-src
         cd openwrt-src
-        cat <<EOF > feeds.conf.default
-src-git packages https://git.openwrt.org/feed/packages.git
-src-git luci https://git.openwrt.org/project/luci.git
-src-git routing https://git.openwrt.org/feed/routing.git
-src-git telephony https://git.openwrt.org/feed/telephony.git
-EOF
+        echo "src-git packages https://git.openwrt.org/feed/packages.git" > feeds.conf.default
+        echo "src-git luci https://git.openwrt.org/project/luci.git" >> feeds.conf.default
+        echo "src-git routing https://git.openwrt.org/feed/routing.git" >> feeds.conf.default
+        echo "src-git telephony https://git.openwrt.org/feed/telephony.git" >> feeds.conf.default
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
