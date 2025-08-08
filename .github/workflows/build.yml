@@ -57,7 +57,7 @@ jobs:
         zip -r firmware.zip ./
 
     - name: 📤 上传固件为构建产物
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: firmware
         path: openwrt/bin/targets/firmware.zip
