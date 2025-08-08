@@ -33,15 +33,16 @@ jobs:
     - name: 🧼 删除旧的源码目录（避免 clone 冲突）
       run: rm -rf openwrt-src
 
-    - name: 📦 获取 OpenWrt 源码
+    - name: 📦 获取 OpenWrt 源码（使用官方源 + 移除 video）
       run: |
         git clone --depth=1 https://github.com/openwrt/openwrt openwrt-src
         cd openwrt-src
-        # 使用清华镜像加速 feeds 下载
-        sed -i 's|https://git.openwrt.org/feed/packages.git|https://mirrors.tuna.tsinghua.edu.cn/git/openwrt/feed/packages.git|g' feeds.conf.default
-        sed -i 's|https://git.openwrt.org/feed/luci.git|https://mirrors.tuna.tsinghua.edu.cn/git/openwrt/feed/luci.git|g' feeds.conf.default
-        sed -i 's|https://git.openwrt.org/feed/routing.git|https://mirrors.tuna.tsinghua.edu.cn/git/openwrt/feed/routing.git|g' feeds.conf.default
-        sed -i 's|https://git.openwrt.org/feed/telephony.git|https://mirrors.tuna.tsinghua.edu.cn/git/openwrt/feed/telephony.git|g' feeds.conf.default
+        cat <<EOF > feeds.conf.default
+src-git packages https://git.openwrt.org/feed/packages.git
+src-git luci https://git.openwrt.org/project/luci.git
+src-git routing https://git.openwrt.org/feed/routing.git
+src-git telephony https://git.openwrt.org/feed/telephony.git
+EOF
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
