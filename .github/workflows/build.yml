@@ -1,13 +1,9 @@
 name: Xiaomi R4A Build (Auto)
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
-
-permissions:
-  contents: write
+  schedule:
+    - cron: '0 16 * * *'  # 每天 00:00（北京时间）
 
 jobs:
   build:
@@ -16,8 +12,8 @@ jobs:
     steps:
     - name: 🧹 清理空间
       run: |
-        sudo rm -rf /opt/*
-        df -h
+        sudo rm -rf /opt/* /usr/local/* /etc/* /var/* /home/* || true
+        docker rmi $(docker images -q) || true
 
     - name: 📥 克隆当前仓库
       uses: actions/checkout@v3
@@ -26,61 +22,52 @@ jobs:
       uses: actions/cache@v3
       with:
         path: openwrt-dl
-        key: openwrt-dl-cache
-        restore-keys: |
-          openwrt-dl-
+        key: ${{ runner.os }}-openwrt-dl
 
     - name: 📁 创建并链接 dl 缓存目录
       run: |
         mkdir -p openwrt-dl
-        mkdir -p openwrt-src
         ln -sf ../openwrt-dl openwrt-src/dl
+
+    - name: 🧼 清理 openwrt-src 目录（防止 clone 冲突）
+      run: rm -rf openwrt-src
 
     - name: 📦 获取 OpenWrt 源码（使用官方源 + 移除 video）
       run: |
         git clone --depth=1 https://github.com/openwrt/openwrt openwrt-src
         cd openwrt-src
-        echo "src-git packages https://git.openwrt.org/feed/packages.git" > feeds.conf.default
-        echo "src-git luci https://git.openwrt.org/project/luci.git" >> feeds.conf.default
-        echo "src-git routing https://git.openwrt.org/feed/routing.git" >> feeds.conf.default
-        echo "src-git telephony https://git.openwrt.org/feed/telephony.git" >> feeds.conf.default
-        ./scripts/feeds update -a
-        ./scripts/feeds install -a
+        rm -rf package/kernel/linux/modules/video.mk
 
     - name: 🧩 执行定制脚本（修改后台地址等）
       run: |
-        cd openwrt-src
-        chmod +x ../scripts/*.sh
-        ../scripts/diy-part1.sh
-        ../scripts/diy-part2.sh
+        chmod +x ./customize.sh
+        ./customize.sh
 
     - name: 🔧 注入 LuCI 插件配置
       run: |
-        echo "CONFIG_PACKAGE_luci=y" >> openwrt-src/.config
-        echo "CONFIG_PACKAGE_luci-ssl=y" >> openwrt-src/.config
-        echo "CONFIG_PACKAGE_luci-app-upnp=y" >> openwrt-src/.config
-        echo "CONFIG_PACKAGE_luci-app-ddns=y" >> openwrt-src/.config
-        echo "CONFIG_PACKAGE_luci-app-wol=y" >> openwrt-src/.config
+        cp -f ./feeds.conf.default openwrt-src/feeds.conf.default
+        cp -f ./diy/luci-apps.mk openwrt-src/package/lean/luci-apps.mk
 
     - name: ⚙️ 替换配置文件
-      run: cp .config openwrt-src/.config
+      run: |
+        cp -f .config openwrt-src/.config
 
     - name: 🛠️ 编译固件（含详细日志）
       run: |
         cd openwrt-src
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
         make defconfig
-        echo "🔍 开始下载依赖包..."
-        make -j1 V=s download || { echo '❌ 下载失败，请检查 target/linux 或网络连接'; exit 1; }
-        echo "🚀 开始编译固件..."
+        make -j$(nproc) download
         make -j$(nproc) V=s
 
     - name: 📦 打包固件为 ZIP
       run: |
-        cd openwrt-src/bin/targets/
-        zip -r firmware.zip ./
+        cd openwrt-src/bin/targets/*/*
+        zip -r firmware.zip *
 
     - name: 📤 上传固件为构建产物
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: firmware
-        path: openwrt-src/bin/targets/firmware.zip
+        path: openwrt-src/bin/targets/*/*/firmware.zip
