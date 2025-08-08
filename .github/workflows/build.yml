@@ -6,6 +6,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,6 +21,9 @@ jobs:
 
     - name: 📥 克隆当前仓库
       uses: actions/checkout@v3
+
+    - name: 🧼 删除旧的 openwrt 目录（防止 clone 冲突）
+      run: rm -rf openwrt
 
     - name: 💾 缓存 OpenWrt 下载包
       uses: actions/cache@v3
@@ -50,8 +56,7 @@ jobs:
         echo "CONFIG_PACKAGE_luci-app-wol=y" >> openwrt/.config
 
     - name: ⚙️ 替换配置文件
-      run: |
-        cp .config openwrt/.config
+      run: cp .config openwrt/.config
 
     - name: 🛠️ 编译固件
       run: |
