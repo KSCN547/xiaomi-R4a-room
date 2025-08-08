@@ -22,56 +22,59 @@ jobs:
     - name: 📥 克隆当前仓库
       uses: actions/checkout@v3
 
-    - name: 🧼 删除旧的 openwrt 目录（防止 clone 冲突）
-      run: rm -rf openwrt
-
     - name: 💾 缓存 OpenWrt 下载包
       uses: actions/cache@v3
       with:
-        path: openwrt/dl
+        path: openwrt-dl
         key: ${{ runner.os }}-openwrt-dl-${{ hashFiles('.config') }}
         restore-keys: |
           ${{ runner.os }}-openwrt-dl-
 
+    - name: 🧼 删除旧的源码目录（避免 clone 冲突）
+      run: rm -rf openwrt-src
+
     - name: 📦 获取 OpenWrt 源码
       run: |
-        git clone --depth=1 https://github.com/openwrt/openwrt openwrt
-        cd openwrt
+        git clone --depth=1 https://github.com/openwrt/openwrt openwrt-src
+        cd openwrt-src
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
+    - name: 🔗 链接缓存目录
+      run: ln -s ../openwrt-dl openwrt-src/dl
+
     - name: 🧩 执行定制脚本（修改后台地址等）
       run: |
-        cd openwrt
+        cd openwrt-src
         chmod +x ../scripts/*.sh
         ../scripts/diy-part1.sh
         ../scripts/diy-part2.sh
 
     - name: 🔧 注入 LuCI 插件配置
       run: |
-        echo "CONFIG_PACKAGE_luci=y" >> openwrt/.config
-        echo "CONFIG_PACKAGE_luci-ssl=y" >> openwrt/.config
-        echo "CONFIG_PACKAGE_luci-app-upnp=y" >> openwrt/.config
-        echo "CONFIG_PACKAGE_luci-app-ddns=y" >> openwrt/.config
-        echo "CONFIG_PACKAGE_luci-app-wol=y" >> openwrt/.config
+        echo "CONFIG_PACKAGE_luci=y" >> openwrt-src/.config
+        echo "CONFIG_PACKAGE_luci-ssl=y" >> openwrt-src/.config
+        echo "CONFIG_PACKAGE_luci-app-upnp=y" >> openwrt-src/.config
+        echo "CONFIG_PACKAGE_luci-app-ddns=y" >> openwrt-src/.config
+        echo "CONFIG_PACKAGE_luci-app-wol=y" >> openwrt-src/.config
 
     - name: ⚙️ 替换配置文件
-      run: cp .config openwrt/.config
+      run: cp .config openwrt-src/.config
 
     - name: 🛠️ 编译固件
       run: |
-        cd openwrt
+        cd openwrt-src
         make defconfig
         make -j$(nproc) download
         make -j$(nproc)
 
     - name: 📦 打包固件为 ZIP
       run: |
-        cd openwrt/bin/targets/
+        cd openwrt-src/bin/targets/
         zip -r firmware.zip ./
 
     - name: 📤 上传固件为构建产物
       uses: actions/upload-artifact@v4
       with:
         name: firmware
-        path: openwrt/bin/targets/firmware.zip
+        path: openwrt-src/bin/targets/firmware.zip
