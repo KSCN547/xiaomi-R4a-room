@@ -30,8 +30,11 @@ jobs:
         restore-keys: |
           openwrt-dl-
 
-    - name: 🧼 删除旧的源码目录（避免 clone 冲突）
-      run: rm -rf openwrt-src
+    - name: 📁 创建并链接 dl 缓存目录
+      run: |
+        mkdir -p openwrt-dl
+        mkdir -p openwrt-src
+        ln -sf ../openwrt-dl openwrt-src/dl
 
     - name: 📦 获取 OpenWrt 源码（使用官方源 + 移除 video）
       run: |
@@ -43,9 +46,6 @@ jobs:
         echo "src-git telephony https://git.openwrt.org/feed/telephony.git" >> feeds.conf.default
         ./scripts/feeds update -a
         ./scripts/feeds install -a
-
-    - name: 🔗 链接缓存目录
-      run: ln -s ../openwrt-dl openwrt-src/dl
 
     - name: 🧩 执行定制脚本（修改后台地址等）
       run: |
@@ -69,7 +69,9 @@ jobs:
       run: |
         cd openwrt-src
         make defconfig
-        make -j1 V=s download
+        echo "🔍 开始下载依赖包..."
+        make -j1 V=s download || { echo '❌ 下载失败，请检查 target/linux 或网络连接'; exit 1; }
+        echo "🚀 开始编译固件..."
         make -j$(nproc) V=s
 
     - name: 📦 打包固件为 ZIP
