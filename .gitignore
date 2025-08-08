@@ -1,3 +1,4 @@
+# 忽略常见压缩包与安装文件
 *.tar
 *.tar.*
 *.jar
@@ -6,9 +7,37 @@
 *.deb
 *.zip
 *.tgz
+
+# 忽略日志与签名文件
 *.log
 *.log.*
 *.sig
 
+# 忽略源码与打包目录
 pkg/
 src/
+
+# OpenWrt 编译相关目录
+/bin/
+/build_dir/
+/dl/
+/feeds/
+/staging_dir/
+/tmp/
+/logs/
+/files/tmp/
+
+# OpenWrt 配置文件
+.config
+.config.old
+
+# OpenWrt 生成的安装包与补丁
+*.ipk
+*.patch
+
+# 编辑器临时文件
+*.swp
+*.swo
+*.bak
+*.orig
+*.rej
