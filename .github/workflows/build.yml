@@ -56,16 +56,8 @@ jobs:
         cd openwrt/bin/targets/
         zip -r firmware.zip ./
 
-    - name: 🚀 发布到 GitHub Releases
-      uses: softprops/action-gh-release@v1
+    - name: 📤 上传固件为构建产物
+      uses: actions/upload-artifact@v3
       with:
-        tag_name: auto-${{ github.run_number }}
-        name: Xiaomi R4A Firmware Build #${{ github.run_number }}
-        body: |
-          自动编译的小米 4A 千兆版固件。
-          配置文件：.config
-          构建编号：${{ github.run_number }}
-        files: |
-          openwrt/bin/targets/firmware.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: firmware
+        path: openwrt/bin/targets/firmware.zip
