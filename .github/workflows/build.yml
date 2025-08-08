@@ -40,6 +40,14 @@ jobs:
         ./scripts/diy-part1.sh
         ./scripts/diy-part2.sh
 
+    - name: 🔧 注入 LuCI 插件配置
+      run: |
+        echo "CONFIG_PACKAGE_luci=y" >> openwrt/.config
+        echo "CONFIG_PACKAGE_luci-ssl=y" >> openwrt/.config
+        echo "CONFIG_PACKAGE_luci-app-upnp=y" >> openwrt/.config
+        echo "CONFIG_PACKAGE_luci-app-ddns=y" >> openwrt/.config
+        echo "CONFIG_PACKAGE_luci-app-wol=y" >> openwrt/.config
+
     - name: ⚙️ 替换配置文件
       run: |
         cp .config openwrt/.config
