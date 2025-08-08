@@ -27,6 +27,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-openwrt-dl-
 
+    - name: 🧼 清理 openwrt 目录（防止 clone 冲突）
+      run: rm -rf openwrt
+
     - name: 📦 获取 OpenWrt 源码
       run: |
         git clone --depth=1 https://github.com/openwrt/openwrt openwrt
