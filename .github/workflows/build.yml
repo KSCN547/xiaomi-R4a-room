@@ -26,9 +26,9 @@ jobs:
       uses: actions/cache@v3
       with:
         path: openwrt-dl
-        key: ${{ runner.os }}-openwrt-dl-${{ hashFiles('.config') }}
+        key: openwrt-dl-cache
         restore-keys: |
-          ${{ runner.os }}-openwrt-dl-
+          openwrt-dl-
 
     - name: 🧼 删除旧的源码目录（避免 clone 冲突）
       run: rm -rf openwrt-src
@@ -37,6 +37,11 @@ jobs:
       run: |
         git clone --depth=1 https://github.com/openwrt/openwrt openwrt-src
         cd openwrt-src
+        # 使用清华镜像加速 feeds 下载
+        sed -i 's|https://git.openwrt.org/feed/packages.git|https://mirrors.tuna.tsinghua.edu.cn/git/openwrt/feed/packages.git|g' feeds.conf.default
+        sed -i 's|https://git.openwrt.org/feed/luci.git|https://mirrors.tuna.tsinghua.edu.cn/git/openwrt/feed/luci.git|g' feeds.conf.default
+        sed -i 's|https://git.openwrt.org/feed/routing.git|https://mirrors.tuna.tsinghua.edu.cn/git/openwrt/feed/routing.git|g' feeds.conf.default
+        sed -i 's|https://git.openwrt.org/feed/telephony.git|https://mirrors.tuna.tsinghua.edu.cn/git/openwrt/feed/telephony.git|g' feeds.conf.default
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
@@ -61,12 +66,12 @@ jobs:
     - name: ⚙️ 替换配置文件
       run: cp .config openwrt-src/.config
 
-    - name: 🛠️ 编译固件
+    - name: 🛠️ 编译固件（含详细日志）
       run: |
         cd openwrt-src
         make defconfig
-        make -j$(nproc) download
-        make -j$(nproc)
+        make -j1 V=s download
+        make -j$(nproc) V=s
 
     - name: 📦 打包固件为 ZIP
       run: |
