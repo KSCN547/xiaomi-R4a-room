@@ -34,11 +34,12 @@ jobs:
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
-    - name: 🧩 执行定制脚本
+    - name: 🧩 执行定制脚本（修改后台地址等）
       run: |
-        chmod +x scripts/*.sh
-        ./scripts/diy-part1.sh
-        ./scripts/diy-part2.sh
+        cd openwrt
+        chmod +x ../scripts/*.sh
+        ../scripts/diy-part1.sh
+        ../scripts/diy-part2.sh
 
     - name: 🔧 注入 LuCI 插件配置
       run: |
