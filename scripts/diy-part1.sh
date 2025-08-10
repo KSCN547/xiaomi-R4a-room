@@ -1,6 +1,6 @@
 #!/bin/bash
 # OpenWrt DIY Script Part 1 - 插件与功能配置
-# 原始功能保持不变，结构优化，便于维护
+# 原始功能保持不变，新增 NAND 驱动支持，结构优化，便于维护
 
 echo "🔧 正在配置 OpenWrt 插件和功能..."
 
@@ -33,6 +33,13 @@ CONFIGS=(
 
   # Material 主题美化
   CONFIG_PACKAGE_luci-theme-material
+
+  # NAND 驱动支持（适配 v2）
+  CONFIG_PACKAGE_kmod-mtd
+  CONFIG_PACKAGE_kmod-spi-nand
+  CONFIG_PACKAGE_kmod-mt7621-nand
+  CONFIG_PACKAGE_ubi-utils
+  CONFIG_PACKAGE_uboot-envtools
 )
 
 # 遍历配置项并追加到 .config 文件
