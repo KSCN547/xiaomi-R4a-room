@@ -47,6 +47,10 @@ jobs:
       run: |
         cp .config openwrt/.config
 
+    - name: 🎯 设置目标设备为 R4A v2
+      run: |
+        sed -i 's/CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_mi-router-4a-gigabit=y/CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_mi-router-4a-gigabit-v2=y/' openwrt/.config
+
     - name: 🔌 注入 LuCI 插件配置
       run: |
         echo "CONFIG_PACKAGE_luci=y" >> openwrt/.config
@@ -55,6 +59,14 @@ jobs:
         echo "CONFIG_PACKAGE_luci-app-ddns=y" >> openwrt/.config
         echo "CONFIG_PACKAGE_luci-app-wol=y" >> openwrt/.config
 
+    - name: 📄 显示最终配置
+      run: |
+        cd openwrt
+        echo "🎯 Target Profile:"
+        grep CONFIG_TARGET .config | grep '=y'
+        echo "🔌 LuCI Plugins:"
+        grep CONFIG_PACKAGE_luci .config | grep '=y'
+
     - name: 🛠️ 编译固件
       run: |
         cd openwrt
@@ -62,13 +74,13 @@ jobs:
         make -j$(nproc) download
         make -j$(nproc)
 
-    - name: 📦 打包固件为 ZIP
+    - name: 📦 打包固件为 ZIP（带日期）
       run: |
         cd openwrt/bin/targets/
-        zip -r firmware.zip ./
+        zip -r "firmware-$(date -u -d '8 hours' +'%Y%m%d').zip" ./
 
     - name: 📤 上传固件为构建产物
       uses: actions/upload-artifact@v4
       with:
         name: firmware
-        path: openwrt/bin/targets/firmware.zip
+        path: openwrt/bin/targets/firmware-*.zip
